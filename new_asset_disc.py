@@ -8,6 +8,7 @@ import re
 import json
 import time
 from pwn import *
+from datetime import datetime
 
 def get_var_value(filename="counter.dat"):
 	with open(filename, "a+") as f:
@@ -172,8 +173,10 @@ def scan_remote_host(hosts):
 				print(os[i])
 			os_str = '"os":' + os_json
 		print("########################")
+		now = datetime.now()
 		final_str += index_str
-		new_str = '{"ip":"' + host + '", "type": "remote"' + ', ' + ports_str + ', ' + os_str + '}\n'
+		time_str = '"lastseen":"' + str(now) + '"'
+		new_str = '{"ip":"' + host + '", "type": "remote"' + ', ' + ports_str + ', ' + os_str + time_str + '}\n'
 		final_str += new_str
 	
 	print(final_str)
@@ -292,8 +295,17 @@ def scan_range(range, local, remote):
 				os_json = json.dumps(os)
 				os_str = '"os":' + os_json
 			mac_str = '"mac":"'+hosts[host] + '"'
+			now = datetime.now()
 			print("#################################")
-			new_str = '{"ip":"' + host + '", "type": "local"' + ', ' + mac_str + ', ' + ports_str + ', ' + os_str + '}\n'
+			time_str = '"lastseen":"' + str(now) + '"'
+			host_str = ""
+
+			try:
+				hostname = socket.gethostbyaddr(host)
+				host_str = '"hostname":"' + str(hostname[0]) + '"'
+			except:
+				host_str = '"hostname":"Unable to detect host-name"'
+			new_str = '{"ip":"' + host + '", "type": "local"' + ', ' + mac_str + ', ' + ports_str + ', ' + os_str + ', ' + host_str + ', ' + time_str + '}\n'
 			final_str += index_str + new_str
 			time.sleep(5)
 		print(final_str)
@@ -354,8 +366,18 @@ def main(argv):
 	ip_str = '{"ip":"' + ip + '", ' + '"type": "IP/URL", '
 	if url == True:
 		ip_str += '"url":"' + U + '", '
+	now = datetime.now()
+	time_str = '"lastseen":"' + str(now) + '"'
+	host_str = ""
 
-	ip_str += ports_str + ', ' + os_str + '}\n'
+	try:
+		hostname = socket.gethostbyaddr(ip)
+		host_str = '"hostname":"' + str(hostname[0]) + '"'
+	except:
+		host_str = '"hostname":"Unable to detect host-name"'
+
+
+	ip_str += ports_str + ', ' + os_str + ', ' + host_str + ', ' + time_str +'}\n'
 	final_str += ip_str
 	print(final_str)
 
