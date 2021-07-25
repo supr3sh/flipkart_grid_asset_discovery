@@ -18,6 +18,13 @@ def get_var_value(filename="counter.dat"):
 		f.truncate()
 		f.write(str(val))
 		return val
+
+def create_json_file(final_str):
+	with open("final.json", "a+") as f:
+		f.seek(0)
+		f.truncate()
+		f.write(final_str)
+
 def create_tunnel():
 	print("You neet to be root in both machines for this.")
 	user_name = str(input("Enter user name with root privellege in remote machine: "))
@@ -179,7 +186,7 @@ def scan_remote_host(hosts):
 		new_str = '{"ip":"' + host + '", "type": "remote"' + ', ' + ports_str + ', ' + os_str + time_str + '}\n'
 		final_str += new_str
 	
-	print(final_str)
+	create_json_file(final_str)
 	sys.exit()
 
 def discover_remote_hosts(range):
@@ -308,7 +315,8 @@ def scan_range(range, local, remote):
 			new_str = '{"ip":"' + host + '", "type": "local"' + ', ' + mac_str + ', ' + ports_str + ', ' + os_str + ', ' + host_str + ', ' + time_str + '}\n'
 			final_str += index_str + new_str
 			time.sleep(5)
-		print(final_str)
+		# print(final_str)
+		create_json_file(final_str)
 		sys.exit()
 	elif remote == True:
 		scan_remote(range)
@@ -357,15 +365,31 @@ def main(argv):
 	ip = str(ip).strip()
 	ids = get_var_value()
 	print("[*] Enumerating ports and service: ")
-	final_str = ""
-	final_str += '{"index":{"_index":"assets","_id":'+ str(ids) +'}}\n'
-	ids += 1
-	ports_str = scan_ports(ip)
+	index_str = '{"index":{"_index":"assets","_id":'+ str(ids) +'}}\n'
+	ports, os = scan_ip(ip)
+	ports_str = ""
+	os_str = ""
+	for port in ports:
+		print(port)
+	if len(ports) == 0:
+		print("No open ports detected.")
+		ports_str = '"ports":"No open ports detected."'
+	else:
+		ports_json = json.dumps(ports)
+		ports_str = '"ports":'+ports_json
+
 	print("[*] Enumerating Operating system: ")
-	os_str = scan_os(ip)
-	ip_str = '{"ip":"' + ip + '", ' + '"type": "IP/URL", '
+	for o in os:
+		print(o)
+	if len(os) == 0:
+		print("Error detecting Operating System.")
+		os_str = '"os":"Error detecting Operating System."'
+	else:
+		os_json = json.dumps(os)
+		os_str = '"os":' + os_json
+	url_str = ""
 	if url == True:
-		ip_str += '"url":"' + U + '", '
+		url_str = '"url":"' + U + '", '
 	now = datetime.now()
 	time_str = '"lastseen":"' + str(now) + '"'
 	host_str = ""
@@ -377,9 +401,8 @@ def main(argv):
 		host_str = '"hostname":"Unable to detect host-name"'
 
 
-	ip_str += ports_str + ', ' + os_str + ', ' + host_str + ', ' + time_str +'}\n'
-	final_str += ip_str
-	print(final_str)
+	final_str = index_str + '{"ip":"' + ip + '", "type":"IP/URL", ' + ports_str + ', ' + os_str + ', ' + host_str + ', ' + time_str + '}\n'
+	create_json_file(final_str)
 
 
 if __name__ == '__main__':
