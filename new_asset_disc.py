@@ -83,54 +83,6 @@ def run_command(shell_cmd):
 	else:
 		raise ValueError("Nmap is either not installed or we couldn't locate nmap path Please ensure nmap is installed")
 
-def scan_ports(ip):
-	cmd = "nmap {target}".format(target=ip)
-	scan_shlex = shlex.split(cmd)
-	output = run_command(scan_shlex)
-	new_str = ""
-
-	if not output:
-		raise ValueError("Unable to perform port scan.")
-	out = output.split("\n")
-	time_str = str(out[-1]).split()
-	time_taken = " ".join(time_str[-2:])
-	out = out[4:-2]
-	for i in range(len(out)):
-		print(out[i])
-	ports_json = json.dumps(out[1:-1])
-	if len(out) == 0:
-		print("No open ports detected")
-		new_str += '"ports":"No open ports found"'	
-	else:
-		new_str += '"ports":'+ ports_json
-	print(f"Total time taken to scan ports and services: {time_taken}\n")
-	return new_str
-
-def scan_os(ip):
-	cmd = "nmap -O {target}".format(target=ip)
-	scan_shlex = shlex.split(cmd)
-	output = run_command(scan_shlex)
-	if not output:
-		raise ValueError("Unable to detect Operating System.")
-	out = output.split("\n")
-	time_str = str(out[-1]).split()
-	time_taken = " ".join(time_str[-2:])
-	out = out[13:-3]
-	if len(out) == 0 or "No exact OS matches for host" in output or (len(out) == 1 and "hop" in output):
-		print("Unable to detect Operating System.")
-		new_str = '"os":"No exact OS matches for host."'
-		return new_str
-	os_json = json.dumps(out)
-	new_str = '"os":' + os_json
-	print("#### Guessed Operating System ####")
-	for i in range(len(out)):
-		if "hop" not in out[i]:
-			print(out[i])
-	
-	print("##################################")
-	print(f"Total time taken to guess OS: {time_taken}\n")
-	return new_str
-
 def scan_remote_host(hosts):
 	final_str = ""
 	for host in hosts:
